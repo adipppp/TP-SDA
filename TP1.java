@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.ListIterator;
 import java.util.PriorityQueue;
 import java.util.StringTokenizer;
@@ -17,101 +17,141 @@ public class TP1 {
     static Wahana[] listWahana;
     static Pengunjung[] listPengunjung;
     static ArrayDeque<Pengunjung> daftarKeluar;
+    static ArrayList<Pengunjung> sudahKeluar;
 
-    private static void processA() {
+    static int binarySearch(ArrayList<Pengunjung> sortedArray, Pengunjung pengunjung) {
+        int low = 0;
+        int high = sortedArray.size();
+        if (high == 0) return -1;
+        while (low <= high) {
+            int mid = (low + high) / 2;
+            Pengunjung p = sortedArray.get(mid);
+            if (p.id == pengunjung.id)
+                return mid;
+            else if (p.id < pengunjung.id)
+                low = mid + 1;
+            else
+                high = mid - 1;
+        }
+        return -1;
+    }
+
+    static void processA() {
         int idPengunjung = in.nextInt();
         Pengunjung pengunjung = listPengunjung[idPengunjung - 1];
         int idWahana = in.nextInt();
         Wahana wahana = listWahana[idWahana - 1];
 
-        LinkedList<Pengunjung> antreanFT1 = wahana.antreanFT1;
-        PriorityQueue<Pengunjung> antreanFT2 = wahana.antreanFT2;
+        PriorityQueue<Pengunjung> antreanFT = wahana.antreanFT;
         PriorityQueue<Pengunjung> antreanReguler = wahana.antreanReguler;
 
         int uangPengunjung = pengunjung.uang;
         int hargaWahana = wahana.harga;
-        int antreanFT1Size = antreanFT1.size();
-        int totalSize = antreanFT1Size + antreanFT2.size() + antreanReguler.size();
-        
-        if (uangPengunjung < hargaWahana) {
+        if (
+            uangPengunjung < hargaWahana ||
+            binarySearch(sudahKeluar, pengunjung) != -1
+        ) {
             out.println(-1);
             return;
         }
 
-        int kapasitasFT1 = wahana.prioritas;
         String tipePengunjung = pengunjung.tipe;
-
-        if (tipePengunjung.equals("R"))
+        if (tipePengunjung.equals("FT"))
+            antreanFT.add(pengunjung);
+        else
             antreanReguler.add(pengunjung);
-        else {
-            ListIterator<Pengunjung> it = antreanFT1.listIterator();
-            while (it.hasNext()) {
-                Pengunjung p = it.next();
-                if (p.id > pengunjung.id) {
-                    it.previous();
-                    break;
-                }
-            }
-            it.add(pengunjung);
 
-            if (antreanFT1Size == kapasitasFT1) {
-                Pengunjung temp = antreanFT1.pollLast();
-                antreanFT2.add(temp);
-            }
-        }
-
-        out.println(totalSize + 1);
+        int totalSize = antreanFT.size() + antreanReguler.size();
+        out.println(totalSize);
     }
 
-    private static void processE() {
+    static void processE() {
         int idWahana = in.nextInt();
         Wahana wahana = listWahana[idWahana - 1];
 
-        LinkedList<Pengunjung> antreanFT1 = wahana.antreanFT1;
-        PriorityQueue<Pengunjung> antreanFT2 = wahana.antreanFT2;
+        PriorityQueue<Pengunjung> antreanFT = wahana.antreanFT;
         PriorityQueue<Pengunjung> antreanReguler = wahana.antreanReguler;
 
         int kapasitas = wahana.kapasitas;
         int prioritas = wahana.prioritas;
-        int antreanFT1Size = antreanFT1.size();
-        int antreanFT2Size = antreanFT2.size();
+        int antreanFTSize = antreanFT.size();
         int antreanRegulerSize = antreanReguler.size();
-        int totalSize = antreanFT1Size + antreanFT2Size + antreanRegulerSize;
+        int totalSize = antreanFTSize + antreanRegulerSize;
 
         if (totalSize == 0) {
             out.println(-1);
             return;
         }
 
-        for (int i = 0; i < antreanFT1Size; i++) {
-            Pengunjung p = antreanFT1.poll();
-            if (p.uang < wahana.harga) {
-                antreanFT1Size++;
-                antreanFT2Size--;
-                continue;
+        int remaining = kapasitas;
+
+        int ftCount;
+        if (prioritas < antreanFTSize)
+            ftCount = prioritas;
+        else
+            ftCount = antreanFTSize;
+
+        for (int i = 0; i < ftCount; i++) {
+            Pengunjung p = antreanFT.poll();
+            boolean breakLoop = false;
+            while (p.uang < wahana.harga) {
+                if (antreanFT.isEmpty())
+                    breakLoop = true;
+                else
+                    p = antreanFT.poll();
             }
-            else if (p.uang == wahana.harga) {
-                antreanFT1Size++;
-                antreanFT2Size--;
-                daftarKeluar.add(p);
-                continue;
-            }
+            if (breakLoop)
+                break;
             p.uang -= wahana.harga;
             p.jumlahBermain++;
             p.poin += wahana.poin;
             out.print(p.id);
-            if (i != antreanFT1Size - 1)
+            if (i != ftCount - 1)
                 out.print(" ");
+
+            remaining--;
         }
 
-        for (int i = 0; i < antreanRegulerSize; i++) {
-            if (i == 0)
-                out.print(" ");
+        if (antreanRegulerSize > 0) out.print(" ");
+
+        int regCount;
+        if (remaining < antreanRegulerSize)
+            regCount = remaining;
+        else
+            regCount = antreanRegulerSize;
+
+        for (int i = 0; i < regCount; i++) {
             Pengunjung p = antreanReguler.poll();
-            if (p.uang < wahana.harga)
-                continue;
-            else if (p.uang == wahana.harga)
-                daftarKeluar.add(p);
+            boolean breakLoop = false;
+            while (p.uang < wahana.harga) {
+                if (antreanReguler.isEmpty())
+                    breakLoop = true;
+                else
+                    p = antreanReguler.poll();
+            }
+            if (breakLoop)
+                break;
+            p.uang -= wahana.harga;
+            p.jumlahBermain++;
+            p.poin += wahana.poin;
+            out.print(p.id);
+            if (i != regCount - 1)
+                out.print(" ");
+
+            remaining--;
+        }
+
+        antreanFTSize = antreanFT.size();
+        if (antreanFTSize > 0) out.print(" ");
+
+        int ftSisa;
+        if (remaining < antreanFTSize)
+            ftSisa = remaining;
+        else
+            ftSisa = antreanFTSize;
+
+        for (int i = 0; i < ftSisa; i++) {
+            Pengunjung p = antreanFT.poll();
             p.uang -= wahana.harga;
             p.jumlahBermain++;
             p.poin += wahana.poin;
@@ -120,46 +160,25 @@ public class TP1 {
                 out.print(" ");
         }
 
-        for (int i = 0; i < antreanFT2Size; i++) {
-            if (i == 0)
-                out.print(" ");
-            Pengunjung p = antreanFT2.poll();
-            if (p.uang < wahana.harga)
-                continue;
-            else if (p.uang == wahana.harga)
-                daftarKeluar.add(p);
-            p.uang -= wahana.harga;
-            p.jumlahBermain++;
-            p.poin += wahana.poin;
-            out.print(p.id);
-            if (i != antreanFT2Size - 1)
-                out.print(" ");
-        }
-
         out.println();
     }
 
-    private static void processS() {
+    static void processS() {
         int idPengunjung = in.nextInt();
         Pengunjung pengunjung = listPengunjung[idPengunjung - 1];
         int idWahana = in.nextInt();
         Wahana wahana = listWahana[idWahana - 1];
 
-        LinkedList<Pengunjung> antreanFT1 = wahana.antreanFT1;
-        PriorityQueue<Pengunjung> antreanFT2 = wahana.antreanFT2;
+        PriorityQueue<Pengunjung> antreanFT = wahana.antreanFT;
         PriorityQueue<Pengunjung> antreanReguler = wahana.antreanReguler;
 
-        if (
-            antreanReguler.contains(pengunjung) ||
-            antreanFT1.contains(pengunjung) ||
-            antreanFT2.contains(pengunjung)
-        )
+        if (antreanFT.contains(pengunjung) || antreanReguler.contains(pengunjung))
             out.println(idPengunjung);
         else
             out.println(-1);
     }
 
-    private static void processF() {
+    static void processF() {
         int P = in.nextInt();
 
         if (daftarKeluar.isEmpty()) {
@@ -167,14 +186,30 @@ public class TP1 {
             return;
         }
 
-        if ()
+        Pengunjung pengunjung;
+        if (P == 0)
+            pengunjung = daftarKeluar.pollFirst();
+        else
+            pengunjung = daftarKeluar.pollLast();
+        
+        ListIterator<Pengunjung> it = sudahKeluar.listIterator();
+        while (it.hasNext()) {
+            Pengunjung p = it.next();
+            if (p.id > pengunjung.id) {
+                it.previous();
+                break;
+            }
+        }
+        it.add(pengunjung);
+
+        out.println(pengunjung.poin);
     }
 
-    private static void processO() {
+    static void processO() {
         int idPengunjung = in.nextInt();
     }
 
-    private static void processQuery(String query) {
+    static void processQuery(String query) {
         switch (query) {
             case "A":
                 processA();
@@ -199,6 +234,9 @@ public class TP1 {
         in = new InputReader(inputStream);
         OutputStream outputStream = System.out;
         out = new PrintWriter(outputStream);
+
+        daftarKeluar = new ArrayDeque<>();
+        sudahKeluar = new ArrayList<>();
 
         int M = in.nextInt(); // jumlah wahana
         listWahana = new Wahana[M];
@@ -253,9 +291,14 @@ public class TP1 {
                 return -1;
             else if (this.jumlahBermain > p.jumlahBermain)
                 return 1;
-            else if (this.jumlahBermain == p.jumlahBermain)
+            else if (this.jumlahBermain < p.jumlahBermain)
+                return -1;
+            else if (this.id > p.id)
+                return 1;
+            else if (this.id < p.id)
+                return -1;
+            else
                 return 0;
-            else return -1;
         }
 
         public String toString() {
@@ -270,9 +313,8 @@ public class TP1 {
         int poin;
         int kapasitas;
         int prioritas;
-        LinkedList<Pengunjung> antreanFT1;
+        PriorityQueue<Pengunjung> antreanFT;
         PriorityQueue<Pengunjung> antreanReguler;
-        PriorityQueue<Pengunjung> antreanFT2;
         
         Wahana(int harga, int poin, int kapasitas, int persenPrioritas) {
             this.harga = harga;
@@ -280,9 +322,8 @@ public class TP1 {
             this.poin = poin;
             this.kapasitas = kapasitas;
             this.prioritas = (int) Math.ceil((double) persenPrioritas / 100 * kapasitas);
-            this.antreanFT1 = new LinkedList<>();
+            this.antreanFT = new PriorityQueue<>();
             this.antreanReguler = new PriorityQueue<>();
-            this.antreanFT2 = new PriorityQueue<>();
             idCounter++;
         }
     }
