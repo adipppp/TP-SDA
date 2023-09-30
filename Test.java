@@ -7,12 +7,10 @@ public class Test {
         lst.add(3);
         lst.add(6);
         
-        ListIterator<Integer> it = lst.listIterator();
-        // System.out.println(it.next());
-        it.next();
-        it.next();
-        it.previous();
-        it.add(5);
-        System.out.println(lst);
+        ListIterator<Integer> it = lst.listIterator(2);
+        while (it.hasNext()) {
+            int n = it.next();
+            System.out.println(it.previousIndex());
+        }
     }
 }
