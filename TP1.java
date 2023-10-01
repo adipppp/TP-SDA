@@ -5,7 +5,7 @@ import java.io.OutputStream;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.ListIterator;
 import java.util.StringTokenizer;
 
@@ -78,9 +78,8 @@ public class TP1 {
         int idWahana = in.nextInt();
         Wahana wahana = listWahana[idWahana - 1];
 
-        ArrayList<Pengunjung> antreanFT = wahana.antreanFT;
-        ArrayList<Pengunjung> antreanReguler = wahana.antreanReguler;
-        AntreanBermain antreanBermain = wahana.antreanBermain;
+        Antrean antreanFT = wahana.antreanFT;
+        Antrean antreanReguler = wahana.antreanReguler;
 
         int uangPengunjung = pengunjung.uang;
         int hargaWahana = wahana.harga;
@@ -95,10 +94,6 @@ public class TP1 {
         else
             antreanReguler.add(pengunjung);
 
-        int kapasitas = wahana.kapasitas;
-        if (antreanBermain.size() < kapasitas)
-            antreanBermain.add(pengunjung);
-
         int totalSize = antreanFT.size() + antreanReguler.size();
         out.println(totalSize);
     }
@@ -107,8 +102,8 @@ public class TP1 {
         int idWahana = in.nextInt();
         Wahana wahana = listWahana[idWahana - 1];
 
-        ArrayList<Pengunjung> antreanFT = wahana.antreanFT;
-        ArrayList<Pengunjung> antreanReguler = wahana.antreanReguler;
+        Antrean antreanFT = wahana.antreanFT;
+        Antrean antreanReguler = wahana.antreanReguler;
         AntreanBermain antreanBermain = wahana.antreanBermain;
 
         if (antreanBermain.size() == 0) {
@@ -116,40 +111,64 @@ public class TP1 {
             return;
         }
 
+        int kapasitas = wahana.kapasitas;
         int prioritas = wahana.prioritas;
 
-        ListIterator<Pengunjung> it = antreanFT.listIterator();
-        while (!antreanFT.isEmpty() && it.previousIndex() < prioritas) {
-            Pengunjung p = it.next();
-        }
+        int i = 0;
+        while (!antreanFT.isEmpty() && i < prioritas) {
+            Pengunjung p = antreanFT.poll();
 
-        while (antreanBermain.size() > 0) {
-            Pengunjung p = antreanBermain.remove(0);
             if (p.uang < wahana.harga) {
                 daftarKeluar.add(p);
-                if (p.tipe.equals("R"))
-                    p = antreanReguler.poll();
-                else {
-                    if (!antreanFT.isEmpty())
-                        p = antreanFT.poll();
-                    else
-                        p = antreanReguler.poll();
-                }
-                antreanBermain.add(p);
                 continue;
             }
+
             p.uang -= wahana.harga;
             p.jumlahBermain++;
             p.poin += wahana.poin;
+
             out.print(p.id + " ");
-            if (p.uang == 0)
+
+            i++;
+        }
+
+        while (!antreanReguler.isEmpty() && i < kapasitas) {
+            Pengunjung p = antreanReguler.poll();
+
+            if (p.uang < wahana.harga) {
                 daftarKeluar.add(p);
+                continue;
+            }
+
+            p.uang -= wahana.harga;
+            p.jumlahBermain++;
+            p.poin += wahana.poin;
+            
+            out.print(p.id + " ");
+
+            i++;
+        }
+
+        if (i < kapasitas) {
+            while (!antreanFT.isEmpty() && i < kapasitas) {
+                Pengunjung p = antreanFT.poll();
+
+                if (p.uang < wahana.harga) {
+                    daftarKeluar.add(p);
+                    continue;
+                }
+
+                p.uang -= wahana.harga;
+                p.jumlahBermain++;
+                p.poin += wahana.poin;
+                
+                out.print(p.id + " ");
+
+                i++;
+            }
         }
 
         out.println();
-
-        antreanFT.clear();
-        antreanReguler.clear();
     }
 
     static void processS() {
@@ -159,9 +178,14 @@ public class TP1 {
         Wahana wahana = listWahana[idWahana - 1];
 
         AntreanBermain antreanBermain = wahana.antreanBermain;
-        int urutan = antreanBermain.indexOf(pengunjung) + 1;
+        int urutan = antreanBermain.indexOf(pengunjung);
 
-        out.println(urutan);
+        if (urutan == -1) {
+            out.println(-1);
+            return;
+        }
+
+        out.println(urutan + 1);
     }
 
     static void processF() {
@@ -213,11 +237,11 @@ public class TP1 {
             // return 1;
             // else if (this.tipe.equals("R") && p.tipe.equals("FT"))
             // return -1;
-            if (this.jumlahBermain > p.jumlahBermain)
-                return 1;
-            else if (this.jumlahBermain < p.jumlahBermain)
-                return -1;
-            else if (this.id > p.id)
+            // if (this.jumlahBermain > p.jumlahBermain)
+            //     return 1;
+            // else if (this.jumlahBermain < p.jumlahBermain)
+            //     return -1;
+            if (this.id > p.id)
                 return 1;
             else if (this.id < p.id)
                 return -1;
@@ -237,8 +261,8 @@ public class TP1 {
         int poin;
         int kapasitas;
         int prioritas;
-        ArrayList<Pengunjung> antreanFT;
-        ArrayList<Pengunjung> antreanReguler;
+        Antrean antreanFT;
+        Antrean antreanReguler;
         AntreanBermain antreanBermain;
 
         Wahana(int harga, int poin, int kapasitas, int persenPrioritas) {
@@ -247,20 +271,37 @@ public class TP1 {
             this.poin = poin;
             this.kapasitas = kapasitas;
             this.prioritas = (int) Math.ceil((double) persenPrioritas / 100 * kapasitas);
-            antreanFT = new ArrayList<>();
-            antreanReguler = new ArrayList<>();
+            antreanFT = new Antrean();
+            antreanReguler = new Antrean();
             antreanBermain = new AntreanBermain(kapasitas, prioritas, antreanFT, antreanReguler);
             idCounter++;
+        }
+    }
+
+    static class Antrean extends LinkedList<Pengunjung> {
+        public boolean add(Pengunjung pengunjung) {
+            ListIterator<Pengunjung> it = listIterator();
+            while (it.hasNext()) {
+                Pengunjung p = it.next();
+                if (p.compareTo(pengunjung) > 0) {
+                    it.previous();
+                    break;
+                }
+            }
+
+            it.add(pengunjung);
+
+            return true;
         }
     }
 
     static class AntreanBermain {
         int kapasitas;
         int prioritas;
-        ArrayList<Pengunjung> antreanFT;
-        ArrayList<Pengunjung> antreanReguler;
+        Antrean antreanFT;
+        Antrean antreanReguler;
 
-        AntreanBermain(int kapasitas, int prioritas, ArrayList<Pengunjung> antreanFT, ArrayList<Pengunjung> antreanReguler) {
+        AntreanBermain(int kapasitas, int prioritas, Antrean antreanFT, Antrean antreanReguler) {
             this.kapasitas = kapasitas;
             this.prioritas = prioritas;
             this.antreanFT = antreanFT;
@@ -281,39 +322,28 @@ public class TP1 {
         public int indexOf(Pengunjung pengunjung) {
             int antreanFTSize = antreanFT.size();
             int antreanRegulerSize = antreanReguler.size();
-            // if (antreanFTSize > prioritas)
-            //     antreanFTSize = prioritas;
-            int index = indexOf(pengunjung, antreanFT, 0, antreanFTSize);
-            if (index != -1)
-                return index;
-            // if (antreanRegulerSize > kapasitas - antreanFTSize)
-            index = indexOf(pengunjung, antreanReguler, antreanFTSize, antreanRegulerSize) + antreanFTSize;
-            int diff = kapasitas - antreanFTSize - antreanRegulerSize;
-            if (diff == 0)
-                return index;
-            index = indexOf(pengunjung, antreanFT, antreanFTSize, kapasitas) + antreanFTSize + antreanRegulerSize;
-            return index;
-        }
+            if (antreanFTSize > prioritas)
+                antreanFTSize = prioritas;
+            int diff = kapasitas - antreanFTSize;
+            if (antreanRegulerSize > diff)
+                antreanRegulerSize = diff;
 
-        private int indexOf(Pengunjung pengunjung, ArrayList<Pengunjung> container, int start, int end) {
-            if (end == 0)
-                return -1;
-            int left = 0, right = end - 1;
-            while (left <= right) {
-                int mid = left + (right - left) / 2;
-                Pengunjung p = container.get(mid);
-
-                if (p.compareTo(pengunjung) == 0)
-                    return mid;
-
-                if (p.compareTo(pengunjung) < 0)
-                    left = mid + 1;
-
+            int index = antreanFT.indexOf(pengunjung);
+            if (index != -1) {
+                if (index < prioritas)
+                    return index;
                 else
-                    right = mid - 1;
+                    return index + antreanRegulerSize;
             }
 
-            return -1;
+            index = antreanReguler.indexOf(pengunjung);
+            if (index == -1)
+                return -1;
+            int offset = index + antreanFTSize;
+            if (offset >= kapasitas)
+                return -1;
+            
+            return offset;
         }
     }
 
