@@ -104,15 +104,11 @@ public class TP1 {
 
         Antrean antreanFT = wahana.antreanFT;
         Antrean antreanReguler = wahana.antreanReguler;
-        AntreanBermain antreanBermain = wahana.antreanBermain;
-
-        if (antreanBermain.size() == 0) {
-            out.println(-1);
-            return;
-        }
 
         int kapasitas = wahana.kapasitas;
         int prioritas = wahana.prioritas;
+
+        boolean isEmpty = true;
 
         int i = 0;
         while (!antreanFT.isEmpty() && i < prioritas) {
@@ -120,6 +116,8 @@ public class TP1 {
 
             if (p.uang < wahana.harga)
                 continue;
+
+            isEmpty = false;
 
             p.uang -= wahana.harga;
             p.jumlahBermain++;
@@ -138,6 +136,8 @@ public class TP1 {
 
             if (p.uang < wahana.harga)
                 continue;
+
+            isEmpty = false;
 
             p.uang -= wahana.harga;
             p.jumlahBermain++;
@@ -158,6 +158,8 @@ public class TP1 {
                 if (p.uang < wahana.harga)
                     continue;
 
+                isEmpty = false;
+
                 p.uang -= wahana.harga;
                 p.jumlahBermain++;
                 p.poin += wahana.poin;
@@ -171,9 +173,15 @@ public class TP1 {
             }
         }
 
+        if (isEmpty) {
+            out.println(-1);
+            return;
+        }
+
         out.println();
     }
 
+    // TODO: FIX THIS SHIT
     static void processS() {
         int idPengunjung = in.nextInt();
         Pengunjung pengunjung = listPengunjung[idPengunjung - 1];
@@ -183,40 +191,62 @@ public class TP1 {
         Antrean antreanFT = wahana.antreanFT;
         Antrean antreanReguler = wahana.antreanReguler;
 
-        int prioritas = wahana.prioritas;
+        int kapasitas = Math.min(wahana.kapasitas, antreanFT.size() + antreanReguler.size());
+        int prioritas = Math.min(wahana.prioritas, antreanFT.size());
 
         int index = 0;
-        ListIterator<Pengunjung> it = antreanFT.listIterator();
-        while (it.hasNext()) {
-            Pengunjung p = it.next();
-            if (p.sudahKeluar) {
-                it.remove();
-                continue;
-            }
-            if (p.equals(pengunjung)) {
-                if (index >= prioritas)
-                    index += antreanReguler.size();
-                out.println(index + 1);
-                return;
-            }
-
-            index++;
-        }
-
-        index = 0;
-        it = antreanReguler.listIterator();
-        while (it.hasNext()) {
-            Pengunjung p = it.next();
-            if (p.sudahKeluar) {
-                it.remove();
-                continue;
-            }
-            if (p.equals(pengunjung)) {
-                out.println(index + Math.min(prioritas, antreanFT.size()) + 1);
-                return;
+        ListIterator<Pengunjung> it_1 = antreanFT.listIterator();
+        ListIterator<Pengunjung> it_2 = antreanReguler.listIterator();
+        if (kapasitas == 1) {
+            while (it_1.hasNext()) {
+                Pengunjung p = it_1.next();
+                if (p.sudahKeluar) {
+                    it_1.remove();
+                    continue;
+                } else if (p.equals(pengunjung)) {
+                    out.println(index + 1);
+                    return;
+                }
+                index++;
             }
 
-            index++;
+            while (it_2.hasNext()) {
+                Pengunjung p = it_2.next();
+                if (p.sudahKeluar) {
+                    it_2.remove();
+                    continue;
+                } else if (p.equals(pengunjung)) {
+                    out.println(index + 1);
+                    return;
+                }
+                index++;
+            }
+        } else {
+            while (it_1.hasNext() || it_2.hasNext()) {
+                while (it_1.hasNext() && index % kapasitas < prioritas) {
+                    Pengunjung p = it_1.next();
+                    if (p.sudahKeluar) {
+                        it_1.remove();
+                        continue;
+                    } else if (p.equals(pengunjung)) {
+                        out.println(index + 1);
+                        return;
+                    }
+                    index++;
+                }
+
+                while (it_2.hasNext() && index % kapasitas >= prioritas) {
+                    Pengunjung p = it_2.next();
+                    if (p.sudahKeluar) {
+                        it_2.remove();
+                        continue;
+                    } else if (p.equals(pengunjung)) {
+                        out.println(index + 1);
+                        return;
+                    }
+                    index++;
+                }
+            }
         }
 
         out.println(-1);
