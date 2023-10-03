@@ -129,7 +129,10 @@ public class TP1 {
             if (p.uang == 0)
                 daftarKeluar.add(p);
 
-            out.print(p.id + " ");
+            out.print(p.id);
+
+            if (!antreanFT.isEmpty() && i < prioritas || !antreanReguler.isEmpty())
+                out.print(" ");
 
             i++;
         }
@@ -148,8 +151,11 @@ public class TP1 {
 
             if (p.uang == 0)
                 daftarKeluar.add(p);
-            
-            out.print(p.id + " ");
+
+            out.print(p.id);
+
+            if (!antreanReguler.isEmpty() && i < kapasitas || !antreanFT.isEmpty())
+                out.print(" ");
 
             i++;
         }
@@ -169,7 +175,10 @@ public class TP1 {
             if (p.uang == 0)
                 daftarKeluar.add(p);
             
-            out.print(p.id + " ");
+            out.print(p.id);
+
+            if (!antreanFT.isEmpty() && i < kapasitas)
+                out.print(" ");
 
             i++;
         }
@@ -191,15 +200,17 @@ public class TP1 {
         Antrean antreanFT = wahana.antreanFT;
         Antrean antreanReguler = wahana.antreanReguler;
 
+        int kapasitas = wahana.kapasitas;
+        int prioritas = wahana.prioritas;
+
         CustomSort c = new CustomSort(idWahana);
+        Antrean tempFT = (Antrean) antreanFT.clone();
+        Antrean tempReguler = (Antrean) antreanReguler.clone();
         antreanFT.sort(c);
         antreanReguler.sort(c);
 
-        int kapasitas = Math.min(wahana.kapasitas, antreanFT.size() + antreanReguler.size());
-        int prioritas = Math.min(wahana.prioritas, antreanFT.size());
-
-        ListIterator<Pengunjung> it_1 = antreanFT.listIterator();
-        ListIterator<Pengunjung> it_2 = antreanReguler.listIterator();
+        ListIterator<Pengunjung> it_1 = tempFT.listIterator();
+        ListIterator<Pengunjung> it_2 = tempReguler.listIterator();
 
         int i = 0;
         while (
@@ -210,20 +221,14 @@ public class TP1 {
             int j = 0;
             while (it_1.hasNext() && j < prioritas) {
                 if (it_1.next() == pengunjung) {
-                    if (pengunjung.uang < wahana.harga)
-                        out.println(-1);
-                    else
-                        out.println(i + j + 1);
+                    out.println(i + j + 1);
                     return;
                 }
                 j++;
             }
             while (it_2.hasNext() && j < kapasitas) {
                 if (it_2.next() == pengunjung) {
-                    if (pengunjung.uang < wahana.harga)
-                        out.println(-1);
-                    else
-                        out.println(i + j + 1);
+                    out.println(i + j + 1);
                     return;
                 }
                 j++;
@@ -303,7 +308,6 @@ public class TP1 {
         int prioritas;
         Antrean antreanFT;
         Antrean antreanReguler;
-        // Antrean antreanBermain;
 
         Wahana(int harga, int poin, int kapasitas, int persenPrioritas) {
             this.harga = harga;
@@ -313,7 +317,6 @@ public class TP1 {
             this.prioritas = (int) Math.ceil((double) persenPrioritas / 100 * kapasitas);
             antreanFT = new Antrean(id);
             antreanReguler = new Antrean(id);
-            // antreanBermain = new Antrean(id);
             idCounter++;
         }
     }
@@ -329,9 +332,20 @@ public class TP1 {
             ListIterator<Pengunjung> it = listIterator();
             while (it.hasNext()) {
                 Pengunjung p = it.next();
-                if (
-                    p.compareTo(pengunjung) > 0 ||
-                    p.jumlahBermainAntrean[idWahana-1] > pengunjung.jumlahBermain
+                // if (
+                //     p.compareTo(pengunjung) > 0 ||
+                //     p.jumlahBermainAntrean[idWahana-1] > pengunjung.jumlahBermain
+                // ) {
+                //     it.previous();
+                //     break;
+                // }
+
+                if (p.jumlahBermainAntrean[idWahana-1] > pengunjung.jumlahBermain) {
+                    it.previous();
+                    break;
+                } else if (
+                    p.jumlahBermainAntrean[idWahana-1] == pengunjung.jumlahBermain &&
+                    p.compareTo(pengunjung) > 0
                 ) {
                     it.previous();
                     break;
@@ -352,37 +366,12 @@ public class TP1 {
         }
 
         public int compare(Pengunjung a, Pengunjung b) {
-            int temp = a.jumlahBermainAntrean[idWahana-1] - b.jumlahBermain;
+            int temp = a.jumlahBermain - b.jumlahBermain;
             if (temp != 0)
                 return temp;
             return a.compareTo(b);
         }
     }
-
-    // static class AntreanBermain extends ArrayList<Pengunjung> {
-    //     int kapasitas;
-    //     int prioritas;
-    //     Antrean antreanFT;
-    //     Antrean antreanReguler;
-
-    //     AntreanBermain(int kapasitas, int prioritas, Antrean antreanFT, Antrean antreanReguler) {
-    //         this.kapasitas = kapasitas;
-    //         this.prioritas = prioritas;
-    //         this.antreanFT = antreanFT;
-    //         this.antreanReguler = antreanReguler;
-    //     }
-
-    //     public int size() {
-    //         int antreanFTSize = antreanFT.size();
-    //         int antreanRegulerSize = antreanReguler.size();
-    //         if (antreanFTSize > prioritas)
-    //             antreanFTSize = prioritas;
-    //         int diff = kapasitas - antreanFTSize;
-    //         if (antreanRegulerSize > diff)
-    //             antreanRegulerSize = diff;
-    //         return antreanFTSize + antreanRegulerSize;
-    //     }
-    // }
 
     // taken from https://codeforces.com/submissions/Petr
     // together with PrintWriter, these input-output (IO) is much faster than the
