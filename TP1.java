@@ -95,8 +95,6 @@ public class TP1 {
         else
             antreanReguler.add(pengunjung);
 
-        pengunjung.jumlahBermainAntrean[idWahana-1] = pengunjung.jumlahBermain;
-
         int totalSize = antreanFT.size() + antreanReguler.size();
         out.println(totalSize);
     }
@@ -203,14 +201,8 @@ public class TP1 {
         int kapasitas = wahana.kapasitas;
         int prioritas = wahana.prioritas;
 
-        CustomSort c = new CustomSort(idWahana);
-        Antrean tempFT = (Antrean) antreanFT.clone();
-        Antrean tempReguler = (Antrean) antreanReguler.clone();
-        antreanFT.sort(c);
-        antreanReguler.sort(c);
-
-        ListIterator<Pengunjung> it_1 = tempFT.listIterator();
-        ListIterator<Pengunjung> it_2 = tempReguler.listIterator();
+        ListIterator<Pengunjung> it_1 = antreanFT.listIterator();
+        ListIterator<Pengunjung> it_2 = antreanReguler.listIterator();
 
         int i = 0;
         while (
@@ -262,6 +254,51 @@ public class TP1 {
         int idPengunjung = in.nextInt();
     }
 
+    static class Antrean extends LinkedList<Pengunjung> {
+        int idWahana;
+        
+        public Antrean(int idWahana) {
+            this.idWahana = idWahana;
+        }
+
+        public boolean add(Pengunjung pengunjung) {
+            ListIterator<Pengunjung> it = listIterator();
+            while (it.hasNext()) {
+                Pengunjung p = it.next();
+
+                if (
+                    p.jumlahBermainAntrean[idWahana-1] > pengunjung.jumlahBermain ||
+                    p.jumlahBermainAntrean[idWahana-1] == pengunjung.jumlahBermain &&
+                    p.compareTo(pengunjung) >= 0
+                ) {
+                    it.previous();
+                    break;
+                }
+            }
+
+            it.add(pengunjung);
+
+            pengunjung.jumlahBermainAntrean[idWahana-1] = pengunjung.jumlahBermain;
+
+            return true;
+        }
+    }
+
+    static class CustomComparator implements Comparator<Pengunjung> {
+        int idWahana;
+
+        public CustomComparator(int idWahana) {
+            this.idWahana = idWahana;
+        }
+
+        public int compare(Pengunjung a, Pengunjung b) {
+            int temp = a.jumlahBermain - b.jumlahBermain;
+            if (temp != 0)
+                return temp;
+            return a.compareTo(b);
+        }
+    }
+
     static class Pengunjung implements Comparable<Pengunjung> {
         static int idCounter = 1;
         int id;
@@ -286,12 +323,7 @@ public class TP1 {
         }
 
         public int compareTo(Pengunjung p) {
-            if (this.id > p.id)
-                return 1;
-            else if (this.id < p.id)
-                return -1;
-            else
-                return 0;
+            return this.id - p.id;
         }
 
         public String toString() {
@@ -318,58 +350,6 @@ public class TP1 {
             antreanFT = new Antrean(id);
             antreanReguler = new Antrean(id);
             idCounter++;
-        }
-    }
-
-    static class Antrean extends LinkedList<Pengunjung> {
-        int idWahana;
-        
-        public Antrean(int idWahana) {
-            this.idWahana = idWahana;
-        }
-
-        public boolean add(Pengunjung pengunjung) {
-            ListIterator<Pengunjung> it = listIterator();
-            while (it.hasNext()) {
-                Pengunjung p = it.next();
-                // if (
-                //     p.compareTo(pengunjung) > 0 ||
-                //     p.jumlahBermainAntrean[idWahana-1] > pengunjung.jumlahBermain
-                // ) {
-                //     it.previous();
-                //     break;
-                // }
-
-                if (p.jumlahBermainAntrean[idWahana-1] > pengunjung.jumlahBermain) {
-                    it.previous();
-                    break;
-                } else if (
-                    p.jumlahBermainAntrean[idWahana-1] == pengunjung.jumlahBermain &&
-                    p.compareTo(pengunjung) > 0
-                ) {
-                    it.previous();
-                    break;
-                }
-            }
-
-            it.add(pengunjung);
-
-            return true;
-        }
-    }
-
-    static class CustomSort implements Comparator<Pengunjung> {
-        int idWahana;
-
-        public CustomSort(int idWahana) {
-            this.idWahana = idWahana;
-        }
-
-        public int compare(Pengunjung a, Pengunjung b) {
-            int temp = a.jumlahBermain - b.jumlahBermain;
-            if (temp != 0)
-                return temp;
-            return a.compareTo(b);
         }
     }
 
